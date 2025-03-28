@@ -100,6 +100,32 @@ CREATE PROCEDURE GetAllBookings()
 
 DELIMITER //
 
+-- Tar bort medlem ---------Funkar den?--------------------------------------------------------------------
+DELIMITER //
+CREATE PROCEDURE DeleteMember(IN in_medlem_namn VARCHAR(50))
+    BEGIN
+        DECLARE EXIT HANDLER FOR SQLEXCEPTION
+            BEGIN
+                ROLLBACK;
+                SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Fel vid radering av medlem';
+            END;
+
+        START TRANSACTION;
+
+        -- Kontrollera om medlem finns
+        IF EXISTS (SELECT 1 FROM Medlemmar Where medlem_namn = in_medlem_namn) THEN
+            DELETE FROM Medlemmar WHERE medlem_namn = in_medlem_namn;
+            COMMIT;
+        ELSE
+            ROLLBACK;
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Medlemmen existerar inte';
+        END IF;
+    END //
+
+    DELIMITER
+
 -- -----------------------------------------------------------------------------------------------------------------------------------------
 
 -- ANROP -----------------------------------------------------------------------------------------------------------------------------------

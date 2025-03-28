@@ -5,11 +5,24 @@ USE GymBokning;
 CREATE TABLE Medlemmar(
     medlem_id INT NOT NULL AUTO_INCREMENT,
     medlem_namn VARCHAR(50),
-    medlem_email VARCHAR(50),
+    medlem_email VARCHAR(50) UNIQUE,
     medlem_telefon VARCHAR(10),
     medlem_aktiv BOOLEAN DEFAULT 1,
     PRIMARY KEY (medlem_id)
 );
+
+DELIMITER //
+CREATE PROCEDURE CreateMember(
+    IN in_medlem_namn VARCHAR(50),
+    IN in_medlem_email VARCHAR(50),
+    IN in_medlem_telefon VARCHAR(10)
+)
+    BEGIN
+        INSERT INTO Medlemmar(medlem_namn, medlem_email, medlem_telefon)
+            VALUES (in_medlem_namn,in_medlem_email,in_medlem_telefon);
+    END //
+
+CALL CreateMember('Peter Michael', 'peter.michael@gmail.com', '0723452817');
 
 -- Skapa tabell för pass
 CREATE TABLE Pass(
@@ -20,6 +33,20 @@ CREATE TABLE Pass(
     pass_datum DATETIME NOT NULL,
     PRIMARY KEY (pass_id)
 );
+
+DELIMITER //
+CREATE PROCEDURE CreatePass(
+    IN in_pass_name VARCHAR(100),
+    IN in_pass_max_deltagare INT,
+    IN in_pass_instruktor VARCHAR(50),
+    IN in_pass_datum DATETIME
+)
+    BEGIN
+        INSERT INTO Pass(pass_namn, pass_max_deltagare, pass_instruktor, pass_datum)
+            VALUES (in_pass_name,in_pass_max_deltagare,in_pass_instruktor,in_pass_datum);
+    END //
+
+CALL CreatePass('Gympa','20','Simon Michael','2025-05-20 20:00:00');
 
 -- Skapa tabell för bokningar
 CREATE TABLE Bokningar(
@@ -43,14 +70,31 @@ INSERT INTO Pass (pass_namn, pass_max_deltagare, pass_instruktor, pass_datum)
            ('Cirkel Gym', 15, 'Noomie Werlinder', '2025-05-27 18:00:00');
 
 INSERT INTO Bokningar (medlem_id, pass_id)
-    VALUES (4,2),
-           (5,1),
-           (6,2);
+    VALUES (1,2),
+           (2,1),
+           (3,2);
 
--- Visa data med íd
-SELECT * FROM Medlemmar;
-SELECT * FROM Pass;
-SELECT * FROM Bokningar;
+
+DELIMITER //
+CREATE PROCEDURE GetAllMembers()
+    BEGIN
+        SELECT * FROM Medlemmar;
+    END //
+
+DELIMITER //
+CREATE PROCEDURE GetAllPass()
+    BEGIN
+        SELECT * FROM Pass;
+    END //
+
+DELIMITER //
+CREATE PROCEDURE GetAllBookings()
+    BEGIN
+        SELECT * FROM Bokningar;
+    END //
+
+
+CALL GetAllBookings();
 
 -- Visa data med namn
 SELECT m.medlem_namn AS Medlemmar, p.pass_namn AS Pass,p.pass_datum AS Datum

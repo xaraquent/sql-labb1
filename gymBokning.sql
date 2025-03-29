@@ -1,7 +1,7 @@
 CREATE DATABASE GymBokning;
 USE GymBokning;
 
--- TABELLER --------------------------------------------------------------------------------------------------------------------
+-- TABELLER ------------------------------------------------------------------------------------------------
 -- Skapa tabell för medlemmar
 CREATE TABLE Medlemmar(
     medlem_id INT NOT NULL AUTO_INCREMENT,
@@ -32,9 +32,19 @@ CREATE TABLE Bokningar(
     FOREIGN KEY (medlem_id) REFERENCES Medlemmar(medlem_id) ON DELETE CASCADE,
     FOREIGN KEY (pass_id) REFERENCES Pass(pass_id) ON DELETE CASCADE
 );
--- -------------------------------------------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------------------------------
 
--- HÅRDKODAD TESTDATA -------------------------------------------------------------------------------------------------
+-- VYER -----------------------------------------------------------------------------------------------
+-- Skapa bokningsvy
+CREATE VIEW MedlemsBokningar AS
+SELECT m.medlem_namn, p.pass_namn, p.pass_datum
+FROM Bokningar b
+JOIN Medlemmar m ON b.medlem_id = m.medlem_id
+JOIN Pass p ON b.pass_id = p.pass_id;
+
+-- ---------------------------------------------------------------------------------------------------------
+
+-- HÅRDKODAD TESTDATA ------------------------------------------------------------------------------------
 -- Skapa testdata
 INSERT INTO Medlemmar (medlem_namn, medlem_email, medlem_telefon)
     VALUES ('Simon Michael','simon.michael@gmail.com','0706842947'),
@@ -49,9 +59,9 @@ INSERT INTO Bokningar (medlem_id, pass_id)
     VALUES (1,2),
            (2,1),
            (3,2);
--- -------------------------------------------------------------------------------------------------------------------------------
+-- --------------------------------------------------------------------------------------------------------
 
--- FUNKTIONER ---------------------------------------------------------------------------------------------------------------------
+-- FUNKTIONER --------------------------------------------------------------------------------------------
 -- Skapa medlem
 DELIMITER //
 CREATE PROCEDURE CreateMember(
@@ -100,19 +110,11 @@ CREATE PROCEDURE GetAllBookings()
 
 DELIMITER //
 
--- Tar bort medlem ---------Funkar den?--------------------------------------------------------------------
+-- Tar bort medlem
 DELIMITER //
 CREATE PROCEDURE DeleteMember(IN in_medlem_namn VARCHAR(50))
     BEGIN
-        DECLARE EXIT HANDLER FOR SQLEXCEPTION
-            BEGIN
-                ROLLBACK;
-                SIGNAL SQLSTATE '45000'
-                SET MESSAGE_TEXT = 'Fel vid radering av medlem';
-            END;
-
         START TRANSACTION;
-
         -- Kontrollera om medlem finns
         IF EXISTS (SELECT 1 FROM Medlemmar Where medlem_namn = in_medlem_namn) THEN
             DELETE FROM Medlemmar WHERE medlem_namn = in_medlem_namn;
@@ -124,11 +126,33 @@ CREATE PROCEDURE DeleteMember(IN in_medlem_namn VARCHAR(50))
         END IF;
     END //
 
-    DELIMITER
+DELIMITER //
 
--- -----------------------------------------------------------------------------------------------------------------------------------------
+-- Uppdatera email
+DELIMITER //
+CREATE PROCEDURE UpdateMemberEmail(
+    IN in_medlem_id INT,
+    IN new_medlem_email VARCHAR(50)
+)
+        BEGIN
+            UPDATE Medlemmar
+            SET medlem_email = new_medlem_email
+            WHERE medlem_id = in_medlem_id;
+        END //
+DELIMITER //
+-- --------------------------------------------------------------------------------------------------------
 
--- ANROP -----------------------------------------------------------------------------------------------------------------------------------
+-- KALKYLERA -----------------------------------------------------------------------------------------------
+-- Räkna antalet medlemmar
+SELECT COUNT(*) AS AntalMedlemmar FROM Medlemmar;
+
+-- Räkna antalet bokningar
+SELECT COUNT(*) AS AntalBokningar FROM Bokningar;
+
+SELECT * FROM MedlemsBokningar;
+-- -------------------------------------------------------------------------------------------------------
+
+-- ANROP -------------------------------------------------------------------------------------------------
 -- Skapa pass
 CALL CreatePass('Gympa','20','Simon Michael','2025-05-20 20:00:00');
 
@@ -144,12 +168,22 @@ CALL GetAllPass();
 -- Hämta bokningstabell
 CALL GetAllBookings();
 
-CALL DeleteMember('Simon Michael');
--- ---------------------------------------------------------------------------------------------------------------------------------------
+-- Radera medlem
+CALL DeleteMember('Peter Michael');
 
+-- Uppdatera medlem
+CALL UpdateMemberEmail(14,'peter.michael@gmail.com');
+-- -------------------------------------------------------------------------------------------------
 
 -- Visa data med namn
 SELECT m.medlem_namn AS Medlemmar, p.pass_namn AS Pass,p.pass_datum AS Datum
 FROM Bokningar b
 INNER JOIN Medlemmar m ON b.medlem_id = m.medlem_id
 INNER JOIN Pass p ON b.pass_id = p.pass_id;
+
+-- DEV FUNCTIONS -------------------------------------------------------------------------------
+-- SET FOREIGN_KEY_CHECKS = 0;
+-- SET FOREIGN_KEY_CHECKS = 1;
+-- DROP TABLE IF EXISTS Pass;
+-- DROP PROCEDURE IF EXISTS DeleteMember;
+-- DROP DATABASE GymBokning;

@@ -272,6 +272,13 @@ CALL PayInvoice(2);
 -- Radera medlem
 CALL DeleteMember('Simon Michael');
 
+-- Hämta medlemstabell igen efter ändringar
+CALL GetAllMembers();
+
+-- Hämta Betalningstabell igen efter betalning
+CALL GetAllInvoices();
+
+-- Visa tydligare bokningstabell
 SELECT * FROM MedlemsBokningar;
 -- -------------------------------------------------------------------------------------------------
 
